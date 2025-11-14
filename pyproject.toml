@@ -14,6 +14,7 @@ dependencies = [
     "pdfminer-six>=20251107",
     "python-dotenv>=1.2.1",
     "reportlab>=4.4.4",
+    "requests>=2.32.5",
     "sentence-transformers>=5.1.2",
 ]
 

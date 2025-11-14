@@ -329,6 +329,7 @@ dependencies = [
     { name = "pdfminer-six" },
     { name = "python-dotenv" },
     { name = "reportlab" },
+    { name = "requests" },
     { name = "sentence-transformers" },
 ]
 
@@ -343,6 +344,7 @@ requires-dist = [
     { name = "pdfminer-six", specifier = ">=20251107" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "reportlab", specifier = ">=4.4.4" },
+    { name = "requests", specifier = ">=2.32.5" },
     { name = "sentence-transformers", specifier = ">=5.1.2" },
 ]
 
