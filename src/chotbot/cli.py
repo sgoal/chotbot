@@ -15,8 +15,14 @@ def main():
     print("Type 'rag on/off' to toggle RAG")
     print("=================================")
     
-    # Initialize chatbot
-    chatbot = Chatbot()
+    # Initialize chatbot with intent recognition
+    import os
+    intent_config_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "intent_config.json")
+    if os.path.exists(intent_config_path):
+        chatbot = Chatbot(intent_config_path)
+    else:
+        chatbot = Chatbot()
+        print("未找到意图配置文件，使用默认意图识别")
     
     # Add some sample documents for RAG
     sample_docs = [
