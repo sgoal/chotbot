@@ -2,6 +2,7 @@ from chotbot.core.llm_client import LLMClient
 from chotbot.rag.rag_manager import RAGManager
 from chotbot.mcp.processor import MCPProcessor
 from chotbot.intent.intent_recognizer import IntentRecognizer
+from chotbot.mcp.tools.tool_manager import ToolManager
 
 class Chatbot:
     """
@@ -14,6 +15,9 @@ class Chatbot:
         
         # 初始化意图识别模块
         self.intent_recognizer = IntentRecognizer(intent_config_path)
+        
+        # 初始化工具管理器
+        self.tool_manager = ToolManager()
     
     def add_documents(self, documents: list):
         """
@@ -48,6 +52,23 @@ class Chatbot:
         print(f"  槽位: {slots}")
         print(f"  置信度: {intent_result['confidence']:.2f}")
         
+        # 尝试使用工具调用
+        response = None
+        
+        if intent == "查询天气":
+            response = self._handle_weather_query(slots)
+        elif intent == "查询股票":
+            response = self._handle_stock_query(slots)
+        elif intent == "查询基金":
+            response = self._handle_fund_query(slots)
+        
+        # 如果工具调用成功，直接返回结果
+        if response:
+            # Add to MCP context
+            self.mcp_processor.context_manager.add_message("user", user_input)
+            self.mcp_processor.context_manager.add_message("assistant", response)
+            return response
+        
         # 继续原有逻辑
         if use_rag:
             # Use RAG for response generation
@@ -59,6 +80,78 @@ class Chatbot:
         else:
             # Use MCP for context-aware generation
             return self.mcp_processor.interact(user_input, system_prompt=system_prompt)
+    
+    def _handle_weather_query(self, slots: dict) -> str:
+        """
+        处理天气查询意图
+        
+        Args:
+            slots (dict): 槽位信息
+            
+        Returns:
+            str: 天气查询结果
+        """
+        city = slots.get("城市")
+        if not city:
+            return "请告诉我您要查询哪个城市的天气。"
+            
+        weather_tool = self.tool_manager.get_tool("查询天气")
+        result = weather_tool.get_weather_by_city(city)
+        
+        if "error" in result:
+            return f"天气查询失败：{result['message']}"
+            
+        # 格式化天气信息
+        weather_info = []
+        for key, value in result.items():
+            weather_info.append(f"{key}：{value}")
+        
+        return "\n".join(weather_info)
+    
+    def _handle_stock_query(self, slots: dict) -> str:
+        """
+        处理股票查询意图
+        
+        Args:
+            slots (dict): 槽位信息
+            
+        Returns:
+            str: 股票查询结果
+        """
+        stock_symbol = slots.get("股票代码")
+        if not stock_symbol:
+            return "请告诉我您要查询的股票代码或名称。"
+            
+        # 这里可以添加股票查询逻辑，目前暂时返回提示
+        return f"股票查询功能正在开发中，您查询的是 {stock_symbol}。"
+    
+    def _handle_fund_query(self, slots: dict) -> str:
+        """
+        处理基金查询意图
+        
+        Args:
+            slots (dict): 槽位信息
+            
+        Returns:
+            str: 基金查询结果
+        """
+        fund_code = slots.get("基金代码")
+        if not fund_code:
+            return "请告诉我您要查询的基金代码。"
+            
+        fund_tool = self.tool_manager.get_tool("查询基金信息")
+        result = fund_tool.get_fund_basic_info(fund_code)
+        
+        if "error" in result:
+            return f"基金查询失败：{result['message']}"
+            
+        # 格式化基金信息
+        fund_info = []
+        for key, value in result.items():
+            if value:  # 只显示有值的信息
+                fund_info.append(f"{key}：{value}")
+        
+        return "\n".join(fund_info)
     
     def clear_context(self):
         """

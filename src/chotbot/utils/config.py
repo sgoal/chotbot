@@ -24,3 +24,11 @@ class Config:
     # MCP Configuration
     MCP_MAX_CONTEXT_SIZE = int(os.getenv("MCP_MAX_CONTEXT_SIZE", "4096"))
     MCP_HISTORY_LIMIT = int(os.getenv("MCP_HISTORY_LIMIT", "10"))
+    
+    # Weather API Configuration
+    WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+    WEATHER_API_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+    WEATHER_API_LANGUAGE = "zh_cn"
+    
+    # Fund API Configuration
+    FUND_API_BASE_URL = "https://api.mfapi.cn/"
