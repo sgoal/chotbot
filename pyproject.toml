@@ -8,6 +8,7 @@ dependencies = [
     "deepseek-ai>=0.0.1",
     "langchain>=1.0.5",
     "langchain-community>=0.4.1",
+    "nltk>=3.9.2",
     "numpy>=2.3.4",
     "openai>=2.7.2",
     "pdfminer-six>=20251107",
