@@ -61,6 +61,8 @@ class Chatbot:
             response = self._handle_stock_query(slots)
         elif intent == "查询基金":
             response = self._handle_fund_query(slots)
+        elif intent == "deepsearch":
+            response = self._handle_deep_search(slots)
         
         # 如果工具调用成功，直接返回结果
         if response:
@@ -223,6 +225,28 @@ class Chatbot:
                 fund_info.append(f"{key}：{value}")
         
         return "\n".join(fund_info)
+
+    def _handle_deep_search(self, slots: dict) -> str:
+        """
+        处理深度搜索意图
+        
+        Args:
+            slots (dict): 槽位信息
+            
+        Returns:
+            str: 搜索结果
+        """
+        query = slots.get("query")
+        if not query:
+            return "请告诉我您想搜索什么。"
+            
+        search_tool = self.tool_manager.get_tool("search")
+        result = search_tool.search(query)
+        
+        if "error" in result:
+            return f"搜索失败：{result['message']}"
+            
+        return result.get("result", "未找到相关信息。")
     
     def clear_context(self):
         """

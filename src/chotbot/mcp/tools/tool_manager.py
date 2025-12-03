@@ -6,6 +6,7 @@ MCP 工具管理器
 from typing import Dict, Any, List
 from chotbot.mcp.tools.weather import WeatherTool
 from chotbot.mcp.tools.fund import FundTool
+from chotbot.mcp.tools.search import SearchTool
 
 class ToolManager:
     """
@@ -22,6 +23,7 @@ class ToolManager:
         """
         self.tools["查询天气"] = WeatherTool()
         self.tools["查询基金信息"] = FundTool()
+        self.tools["search"] = SearchTool()
     
     def get_tool_list(self) -> List[Dict[str, Any]]:
         """

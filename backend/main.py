@@ -5,12 +5,13 @@ import traceback
 from datetime import datetime
 
 # 配置日志
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend.log')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('./chotbot/backend.log')
+        logging.FileHandler(log_file_path)
     ]
 )
 logger = logging.getLogger(__name__)

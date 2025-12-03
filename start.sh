@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # 遇到错误立即退出
+set -ex # 遇到错误立即退出,并打印执行的命令
 
 PROJECT_ROOT="/Users/bytedance/agent/aitrade/chotbot"
 BACKEND_PORT=5001
@@ -28,15 +28,16 @@ if [ ! -d ".venv" ]; then
     uv venv
 fi
 source ".venv/bin/activate"
-uv run uvicorn backend.main:app --host 0.0.0.0 --port $BACKEND_PORT --log-level critical &
+uv run uvicorn backend.main:app --host 0.0.0.0 --port $BACKEND_PORT --log-level info &
 BACKEND_PID=$!
 
 # 验证后端
 for i in {1..10}; do
-    if curl -s "http://localhost:$BACKEND_PORT" > /dev/null 2>&1; then
+    if curl -s "http://localhost:$BACKEND_PORT"; then
         echo "✅ 后端运行在: http://localhost:$BACKEND_PORT"
         break
     fi
+    sleep 1
 done
 
 # --------------------------
@@ -49,10 +50,11 @@ FRONTEND_PID=$!
 
 # 验证前端
 for i in {1..15}; do
-    if curl -s "http://localhost:$FRONTEND_PORT" > /dev/null 2>&1; then
+    if curl -s "http://localhost:$FRONTEND_PORT"; then
         echo "✅ 前端运行在: http://localhost:$FRONTEND_PORT"
         break
     fi
+    sleep 1
 done
 
 # --------------------------

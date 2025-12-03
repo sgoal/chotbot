@@ -50,6 +50,20 @@
                     "examples": ["000001", "161005", "005011"]
                 }
             ]
+        },
+        {
+            "name": "deepsearch",
+            "examples": [
+                "今天星期几？",
+                "帮我查一下最近的电影",
+                "苹果公司的CEO是谁？"
+            ],
+            "slots": [
+                {
+                    "name": "query",
+                    "type": "string"
+                }
+            ]
         }
     ]
 }
