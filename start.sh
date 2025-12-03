@@ -29,17 +29,26 @@ if [ ! -d ".venv" ]; then
 fi
 source ".venv/bin/activate"
 # 使用虚拟环境的 Python 直接运行，而不是 uv run
+echo "⏳ 正在启动后端服务，这可能需要15-20秒（主要是加载AI模型）..."
 .venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port $BACKEND_PORT --log-level info &
 BACKEND_PID=$!
 
 # 验证后端
-for i in {1..10}; do
-    if curl -s "http://localhost:$BACKEND_PORT"; then
+echo "⏳ 等待后端服务启动（最多等待30秒）..."
+for i in {1..30}; do
+    if curl -s "http://localhost:$BACKEND_PORT" > /dev/null 2>&1; then
         echo "✅ 后端运行在: http://localhost:$BACKEND_PORT"
         break
     fi
+    if [ $i -eq 10 ]; then
+        echo "⏳ 正在加载模型，请稍候..."
+    fi
     sleep 1
 done
+
+if [ $i -eq 30 ]; then
+    echo "⚠️  后端服务启动超时，请检查日志"
+fi
 
 # --------------------------
 # 3. 启动前端
