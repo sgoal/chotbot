@@ -44,16 +44,20 @@ class ReActAgent:
 
 请按照以下要求执行：
 1. 尽可能使用提供的工具获取信息来回答问题
-2. 最终答案中必须包含使用工具获取的引用来源
+2. 最终答案只需要返回核心内容，不需要包含引用来源
 3. 工具使用格式：[工具名[参数]]，例如 search[北京天气]
 
 Action: """
             action = self.llm_client.generate([{"role": "user", "content": prompt}])
             logger.info(f"Action: {action}")
 
-            # 4. 检查是否得出最终答案
-            if "Final Answer:" in action:
-                final_answer = action.split("Final Answer:")[-1].strip()
+            # 4. 解析行动
+            tool_name, tool_input = self._parse_action(action)
+            
+            # 5. 检查是否得出最终答案
+            if not tool_name:
+                # 如果没有工具调用，直接将当前action作为最终答案
+                final_answer = action.split("Answer:")[-1].strip() if "Answer:" in action else action.strip()
                 
                 # 如果有引用信息，将其添加到最终答案中
                 if all_citations:
@@ -180,9 +184,13 @@ Action: """
             action = self.llm_client.generate([{"role": "user", "content": prompt}])
             logger.info(f"Action: {action}")
 
-            # 4. 检查是否得出最终答案
-            if "Final Answer:" in action:
-                final_answer = action.split("Final Answer:")[-1].strip()
+            # 4. 解析行动
+            tool_name, tool_input = self._parse_action(action)
+            
+            # 5. 检查是否得出最终答案
+            if "Final Answer:" in action or  not tool_name:
+                # 如果没有工具调用，直接将当前action作为最终答案
+                final_answer = action.replace("Final Answer:", "").strip()
                 
                 # 如果有引用信息，将其添加到最终答案中
                 if all_citations:
@@ -280,10 +288,28 @@ History:
             return f"Error executing tool: {e}"
 
     def _parse_action(self, action: str) -> tuple[str, str] | tuple[None, None]:
-        match = re.match(r"(.*?)\[(.*?)\]", action)
+        # 首先找到最后一行包含Action:的行
+        lines = action.split('\n')
+        action_line = None
+        for line in reversed(lines):
+            if 'Action:' in line:
+                action_line = line
+                break
+        
+        if not action_line:
+            # 如果没有找到Action:行，尝试在整个字符串中搜索工具调用格式
+            match = re.search(r'(\w+)\[(.*?)\]', action, re.DOTALL)
+            if not match:
+                return None, None
+            tool_name = match.group(1).strip()
+            tool_input = match.group(2).strip()
+            return tool_name, tool_input
+        
+        # 从Action:行中提取工具调用
+        match = re.search(r'(\w+)\[(.*?)\]', action_line)
         if not match:
             return None, None
-
+            
         tool_name = match.group(1).strip()
         tool_input = match.group(2).strip()
         return tool_name, tool_input

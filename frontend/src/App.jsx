@@ -196,61 +196,61 @@ function App() {
     <div className="app">
       <div className="chat-container">
         <div className="messages">
-          {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.role}`}>
-              <div className="message-content">
-                <MarkdownContent content={msg.content} />
-              </div>
-            </div>
-          ))}
-          
-          {/* 思考过程展示 */}
-          {thinkingSteps.length > 0 && (
-            <div className={`message assistant thinking ${showThinking ? '' : 'collapsed'}`}>
-              <div className="message-content">
-                <div className="thinking-header" onClick={toggleThinking}>
-                  🤔 思考过程
-                  <span className="toggle-icon">{showThinking ? '▼' : '▶'}</span>
+          {messages.map((msg, index) => {
+            const isLastUserMsg = index === messages.length - 1 && msg.role === 'user';
+            
+            return (
+              <React.Fragment key={index}>
+                <div className={`message ${msg.role}`}>
+                  <div className="message-content">
+                    <MarkdownContent content={msg.content} />
+                  </div>
                 </div>
-                {showThinking && (
-                  <>
-                    {thinkingSteps.map((step, index) => (
-                      <div key={index} className="thinking-step">
-                        {step.type === 'thought' && (
-                          <div className="thought">
-                            <strong>初始思考:</strong>
-                            <div className="thought-content">{step.content}</div>
-                          </div>
-                        )}
-                        {step.type === 'action' && (
-                          <div className="action">
-                            <strong>步骤 {step.step}:</strong>
-                            <div className="action-content">
-                              <div className="sub-thought">
-                                <strong>💭 思考:</strong> {step.thought}
-                              </div>
-                              <div className="action-detail">
-                                <strong>🎯 行动:</strong> <code>{step.action}</code>
-                              </div>
-                              <div className="observation">
-                                <strong>👁️ 观察:</strong> {step.observation}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {step.type === 'final_answer' && (
-                          <div className="final-answer">
-                            <strong>✅ 最终答案:</strong>
-                            <div className="final-answer-content">{step.content}</div>
-                          </div>
-                        )}
+                
+                {/* 只在最后一条用户消息之后显示思考过程 */}
+                {isLastUserMsg && thinkingSteps.length > 0 && (
+                  <div className={`message assistant thinking ${showThinking ? '' : 'collapsed'}`}>
+                    <div className="message-content">
+                      <div className="thinking-header" onClick={toggleThinking}>
+                        🤔 思考过程
+                        <span className="toggle-icon">{showThinking ? '▼' : '▶'}</span>
                       </div>
-                    ))}
-                  </>
+                      {showThinking && (
+                        <>
+                          {thinkingSteps.map((step, stepIndex) => (
+                            <div key={stepIndex} className="thinking-step">
+                              {step.type === 'thought' && (
+                                <div className="thought">
+                                  <strong>初始思考:</strong>
+                                  <div className="thought-content">{step.content}</div>
+                                </div>
+                              )}
+                              {step.type === 'action' && (
+                                <div className="action">
+                                  <strong>步骤 {step.step}:</strong>
+                                  <div className="action-content">
+                                    <div className="sub-thought">
+                                      <strong>💭 思考:</strong> {step.thought}
+                                    </div>
+                                    <div className="action-detail">
+                                      <strong>🎯 行动:</strong> <code>{step.action}</code>
+                                    </div>
+                                    <div className="observation">
+                                      <strong>👁️ 观察:</strong> {step.observation}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
-          )}
+              </React.Fragment>
+            );
+          })}
           
           {isLoading && (
             <div className="message assistant">
