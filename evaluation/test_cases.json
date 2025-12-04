@@ -1,0 +1,187 @@
+{
+  "test_categories": {
+    "basic_conversation": {
+      "description": "基础对话能力测试",
+      "priority": "high",
+      "test_cases": [
+        {
+          "id": "basic_001",
+          "query": "你好",
+          "expected_keywords": ["你好", "您好", "hello", "hi"],
+          "expected_behavior": "礼貌问候",
+          "difficulty": "easy"
+        },
+        {
+          "id": "basic_002",
+          "query": "今天天气怎么样？",
+          "expected_keywords": ["天气", "温度", "预报"],
+          "expected_behavior": "提供天气信息",
+          "difficulty": "medium"
+        },
+        {
+          "id": "basic_003",
+          "query": "退出",
+          "expected_keywords": ["再见", "拜拜", "goodbye"],
+          "expected_behavior": "礼貌结束对话",
+          "difficulty": "easy"
+        }
+      ]
+    },
+    "knowledge_qa": {
+      "description": "知识问答能力测试",
+      "priority": "high",
+      "test_cases": [
+        {
+          "id": "knowledge_001",
+          "query": "世界首富是谁？",
+          "expected_keywords": ["马斯克", "Elon Musk", "Bernard Arnault", "贝索斯"],
+          "expected_behavior": "提供准确的人物信息",
+          "difficulty": "medium",
+          "requires_search": true
+        },
+        {
+          "id": "knowledge_002",
+          "query": "Python和JavaScript有什么区别？",
+          "expected_keywords": ["编程语言", "类型系统", "应用领域", "语法"],
+          "expected_behavior": "提供技术对比",
+          "difficulty": "hard"
+        },
+        {
+          "id": "knowledge_003",
+          "query": "什么是RAG？",
+          "expected_keywords": ["检索增强生成", "Retrieval-Augmented Generation", "向量数据库", "知识库"],
+          "expected_behavior": "解释技术概念",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    "rag_functionality": {
+      "description": "RAG功能测试",
+      "priority": "high",
+      "test_cases": [
+        {
+          "id": "rag_001",
+          "query": "根据文档，这个项目的核心功能是什么？",
+          "expected_keywords": ["RAG", "MCP", "聊天机器人", "搜索"],
+          "expected_behavior": "从文档中提取信息",
+          "difficulty": "medium",
+          "requires_rag": true
+        },
+        {
+          "id": "rag_002",
+          "query": "如何启动这个chatbot？",
+          "expected_keywords": ["bash start.sh", "uv run", "python run_chatbot.py"],
+          "expected_behavior": "提供启动指令",
+          "difficulty": "easy",
+          "requires_rag": true
+        }
+      ]
+    },
+    "tool_usage": {
+      "description": "工具使用能力测试",
+      "priority": "high",
+      "test_cases": [
+        {
+          "id": "tool_001",
+          "query": "北京今天的天气如何？",
+          "expected_keywords": ["北京", "温度", "天气", "预报"],
+          "expected_behavior": "调用天气工具",
+          "difficulty": "medium",
+          "requires_tools": true
+        },
+        {
+          "id": "tool_002",
+          "query": "搜索一下最新的AI新闻",
+          "expected_keywords": ["AI", "人工智能", "新闻", "最新"],
+          "expected_behavior": "调用搜索工具",
+          "difficulty": "medium",
+          "requires_tools": true
+        }
+      ]
+    },
+    "conversation_context": {
+      "description": "对话上下文理解测试",
+      "priority": "medium",
+      "test_cases": [
+        {
+          "id": "context_001",
+          "query": "他今年多大了？",
+          "context": "之前讨论过Elon Musk",
+          "expected_keywords": ["马斯克", "年龄", "1971", "岁"],
+          "expected_behavior": "理解上下文中的指代",
+          "difficulty": "hard"
+        },
+        {
+          "id": "context_002",
+          "query": "继续",
+          "context": "之前正在解释RAG的概念",
+          "expected_keywords": ["RAG", "检索", "生成"],
+          "expected_behavior": "继续之前的对话",
+          "difficulty": "hard"
+        }
+      ]
+    },
+    "edge_cases": {
+      "description": "边界情况测试",
+      "priority": "medium",
+      "test_cases": [
+        {
+          "id": "edge_001",
+          "query": "",
+          "expected_behavior": "优雅处理空输入",
+          "difficulty": "easy"
+        },
+        {
+          "id": "edge_002",
+          "query": "!@#$%^&*()",
+          "expected_behavior": "处理特殊字符",
+          "difficulty": "easy"
+        },
+        {
+          "id": "edge_003",
+          "query": "a".repeat(1000),
+          "expected_behavior": "处理超长输入",
+          "difficulty": "medium"
+        }
+      ]
+    },
+    "multilingual": {
+      "description": "多语言支持测试",
+      "priority": "low",
+      "test_cases": [
+        {
+          "id": "lang_001",
+          "query": "Hello, how are you?",
+          "expected_keywords": ["hello", "hi", "fine"],
+          "expected_behavior": "理解并回应英文",
+          "difficulty": "easy"
+        },
+        {
+          "id": "lang_002",
+          "query": "Bonjour, comment allez-vous?",
+          "expected_behavior": "识别法语并尝试回应",
+          "difficulty": "medium"
+        }
+      ]
+    }
+  },
+  "evaluation_criteria": {
+    "response_quality": {
+      "relevance": "回答是否与问题相关",
+      "accuracy": "信息是否准确",
+      "completeness": "回答是否完整",
+      "clarity": "表达是否清晰"
+    },
+    "functional_performance": {
+      "response_time": "响应时间（秒）",
+      "rag_effectiveness": "RAG检索准确率",
+      "tool_success_rate": "工具调用成功率",
+      "context_retention": "上下文保持能力"
+    },
+    "user_experience": {
+      "naturalness": "对话是否自然流畅",
+      "helpfulness": "是否有帮助",
+      "error_handling": "错误处理是否优雅"
+    }
+  }
+}

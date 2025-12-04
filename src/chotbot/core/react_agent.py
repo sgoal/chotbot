@@ -11,7 +11,15 @@ class ReActAgent:
         self.llm_client = llm_client
         self.tool_manager = tool_manager
 
-    def run(self, user_input: str, max_steps: int = 100) -> str:
+    def run(self, user_input: str, max_steps: int = 100) -> tuple[str, list]:
+        """
+        Run the ReAct agent and return the final answer and thinking steps.
+        
+        Returns:
+            tuple: (final_answer, thinking_steps)
+            - final_answer: The final answer to the user's question
+            - thinking_steps: List of dictionaries containing the thinking process
+        """
         # 1. 初始化思考过程和历史记录
         thought = (
             f"I need to answer the following question: {user_input}. "
@@ -20,6 +28,7 @@ class ReActAgent:
             f"I will start by thinking about which tool to use."
         )
         history = []
+        thinking_steps = []
         logger.info(f"Initial thought: {thought}")
 
         # 2. ReAct 循环
@@ -37,7 +46,16 @@ Action: [Your action here, e.g., search[query]]"""
             if "Final Answer:" in action:
                 final_answer = action.split("Final Answer:")[-1].strip()
                 logger.info(f"Final Answer: {final_answer}")
-                return final_answer
+                
+                # 添加最终答案到思考步骤
+                thinking_steps.append({
+                    "step": len(thinking_steps) + 1,
+                    "type": "final_answer",
+                    "content": final_answer,
+                    "thought": "Final answer reached"
+                })
+                
+                return final_answer, thinking_steps
 
             # 5. 执行行动并获取观察结果
             observation = self._execute_action(action)
@@ -47,6 +65,15 @@ Action: [Your action here, e.g., search[query]]"""
             history.append(f"Thought: {thought}")
             history.append(f"Action: {action}")
             history.append(f"Observation: {observation}")
+            
+            # 添加当前步骤到思考步骤列表
+            thinking_steps.append({
+                "step": len(thinking_steps) + 1,
+                "type": "action",
+                "thought": thought,
+                "action": action,
+                "observation": observation
+            })
 
             history_str = "\n".join(history)
             thought = (
@@ -60,7 +87,16 @@ History:
 
         # 7. 超出最大步数，返回错误信息
         logger.warning("Max steps reached, unable to find an answer.")
-        return "Sorry, I couldn't find an answer after several steps."
+        error_message = "Sorry, I couldn't find an answer after several steps."
+        
+        thinking_steps.append({
+            "step": len(thinking_steps) + 1,
+            "type": "error",
+            "content": error_message,
+            "thought": "Max steps reached"
+        })
+        
+        return error_message, thinking_steps
 
     def _execute_action(self, action: str) -> str:
         tool_name, tool_input = self._parse_action(action)

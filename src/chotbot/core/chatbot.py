@@ -235,14 +235,31 @@ class Chatbot:
         处理深度搜索意图
         
         Args:
-            slots (dict): 槽位信息
+            user_input (str): 用户输入
             
         Returns:
             str: 搜索结果
         """
-    
-            
-        return self.react_agent.run(user_input)
+        # 运行 ReAct Agent 并获取思考步骤
+        final_answer, thinking_steps = self.react_agent.run(user_input)
+        
+        # 格式化思考过程为字符串
+        if thinking_steps:
+            thinking_process = "\n\n🤔 **思考过程:**\n"
+            for step in thinking_steps:
+                if step["type"] == "action":
+                    thinking_process += f"\n**步骤 {step['step']}:**\n"
+                    thinking_process += f"- 💭 思考: {step['thought'][:100]}...\n"
+                    thinking_process += f"- 🎯 行动: {step['action']}\n"
+                    thinking_process += f"- 👁️ 观察: {step['observation'][:100]}...\n"
+                elif step["type"] == "final_answer":
+                    thinking_process += f"\n✅ **最终答案:**\n"
+                    thinking_process += f"{step['content']}\n"
+        else:
+            thinking_process = ""
+        
+        # 返回最终答案和思考过程
+        return final_answer + thinking_process
     
     def clear_context(self):
         """
