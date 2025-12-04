@@ -25,6 +25,11 @@ class Config:
     MCP_MAX_CONTEXT_SIZE = int(os.getenv("MCP_MAX_CONTEXT_SIZE", "4096"))
     MCP_HISTORY_LIMIT = int(os.getenv("MCP_HISTORY_LIMIT", "10"))
     
+    # MCP History Compression Configuration
+    MCP_COMPRESSION_ENABLED = os.getenv("MCP_COMPRESSION_ENABLED", "true").lower() == "true"
+    MCP_COMPRESSION_THRESHOLD = int(os.getenv("MCP_COMPRESSION_THRESHOLD", "15"))
+    MCP_COMPRESSION_STRATEGY = os.getenv("MCP_COMPRESSION_STRATEGY", "summary")  # summary, extract_key_info, hybrid
+    
     # Weather API Configuration
     WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
     WEATHER_API_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"

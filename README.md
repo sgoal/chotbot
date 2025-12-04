@@ -115,6 +115,18 @@ chatbot.add_documents([
 
 Edit the configuration in `src/chotbot/utils/config.py` or override environment variables in `.env`.
 
+### TODO
+
+- [ ] 完善文档加载功能
+- [ ] 支持更多文档格式
+- [ ] 优化 RAG 模型性能
+- [ ] 增加 MCP 协议支持
+- [ ] 完善错误处理机制
+- [ ] 增加联调历史记录
+- [ ] 增加引用功能
+
+
+
 ## License
 
 MIT

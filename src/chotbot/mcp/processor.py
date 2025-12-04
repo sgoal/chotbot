@@ -1,12 +1,14 @@
 from chotbot.mcp.context_manager import MCPContextManager
 from chotbot.core.llm_client import LLMClient
+from chotbot.core.history_compressor import HistoryCompressor
 
 class MCPProcessor:
     """
     MCP (Model Context Protocol) processor that handles context-aware interactions.
     """
     def __init__(self, llm_client: LLMClient):
-        self.context_manager = MCPContextManager()
+        compressor = HistoryCompressor(llm_client)
+        self.context_manager = MCPContextManager(compressor)
         self.llm_client = llm_client
     
     def interact(self, user_input: str, system_prompt: str = None) -> str:

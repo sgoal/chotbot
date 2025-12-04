@@ -1,5 +1,6 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from chotbot.utils.config import Config
+from chotbot.core.history_compressor import HistoryCompressor
 
 class MCPContextManager:
     """
@@ -8,10 +9,14 @@ class MCPContextManager:
     This implementation manages the chat history and context window
     to ensure efficient use of the model's context limit.
     """
-    def __init__(self):
+    def __init__(self, history_compressor: Optional[HistoryCompressor] = None):
         self.history: List[Dict[str, Any]] = []
         self.max_context_size = Config.MCP_MAX_CONTEXT_SIZE
         self.history_limit = Config.MCP_HISTORY_LIMIT
+        self.compressor = history_compressor
+        self.compression_enabled = Config.MCP_COMPRESSION_ENABLED
+        self.compression_threshold = Config.MCP_COMPRESSION_THRESHOLD
+        self.compression_strategy = Config.MCP_COMPRESSION_STRATEGY
     
     def add_message(self, role: str, content: str):
         """
@@ -27,9 +32,13 @@ class MCPContextManager:
         }
         self.history.append(message)
         
-        # Limit the history to the configured limit
-        if len(self.history) > self.history_limit:
-            self.history = self.history[-self.history_limit:]
+        # Check if compression is needed
+        if self._should_compress():
+            self._compress_history()
+        else:
+            # Limit the history to the configured limit
+            if len(self.history) > self.history_limit:
+                self.history = self.history[-self.history_limit:]
     
     def get_context(self, max_tokens: int = None) -> List[Dict[str, Any]]:
         """
@@ -84,3 +93,55 @@ class MCPContextManager:
             int: Number of messages
         """
         return len(self.history)
+    
+    def _should_compress(self) -> bool:
+        """
+        Check if history compression should be triggered.
+        
+        Returns:
+            bool: True if compression is needed
+        """
+        if not self.compression_enabled or not self.compressor:
+            return False
+        
+        return self.compressor.should_compress(
+            self.history, 
+            threshold_messages=self.compression_threshold
+        )
+    
+    def _compress_history(self):
+        """
+        Compress the conversation history using the configured strategy.
+        """
+        try:
+            logger.info(f"Compressing history with {len(self.history)} messages using {self.compression_strategy} strategy")
+            
+            original_count = len(self.history)
+            
+            # Perform compression
+            compressed = self.compressor.compress(
+                self.history,
+                strategy=self.compression_strategy,
+                keep_last_n=3  # Keep last 3 messages uncompressed
+            )
+            
+            self.history = compressed
+            
+            logger.info(f"History compressed from {original_count} to {len(self.history)} messages")
+            
+        except Exception as e:
+            logger.error(f"Failed to compress history: {e}")
+            # Fallback to simple truncation
+            if len(self.history) > self.history_limit:
+                self.history = self.history[-self.history_limit:]
+    
+    def get_compression_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about compression if compressor is available.
+        
+        Returns:
+            Dict[str, Any]: Compression statistics
+        """
+        if hasattr(self.compressor, 'get_compression_stats'):
+            return self.compressor.get_compression_stats()
+        return {"enabled": self.compression_enabled}
