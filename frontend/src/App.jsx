@@ -42,11 +42,13 @@ const MarkdownContent = ({ content }) => {
 };
 
 function App() {
-  const [messages, setMessages] = useState([]);
+  // 新的状态结构：将每个对话轮次的信息放在一起
+  // 每个轮次包含：userMessage, thinkingSteps, assistantMessage, showThinking
+  const [conversations, setConversations] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [thinkingSteps, setThinkingSteps] = useState([]);
-  const [showThinking, setShowThinking] = useState(false); // 控制是否显示思考过程
+  // 当前正在进行的对话的思考过程
+  const [currentThinkingSteps, setCurrentThinkingSteps] = useState([]);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -55,7 +57,7 @@ function App() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, thinkingSteps, showThinking]);
+  }, [conversations, currentThinkingSteps, isLoading]);
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -64,11 +66,9 @@ function App() {
     console.log('用户输入:', inputValue.trim());
 
     const userMessage = { role: 'user', content: inputValue.trim() };
-    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
-    setThinkingSteps([]); // 清空之前的思考步骤
-    setShowThinking(false); // 隐藏思考过程
+    setCurrentThinkingSteps([]); // 清空当前思考过程
 
     try {
       console.log('正在发送请求到后端...');
@@ -116,8 +116,7 @@ function App() {
                 type: 'thought',
                 content: data.content
               });
-              setThinkingSteps([...currentSteps]);
-              setShowThinking(true); // 显示思考过程
+              setCurrentThinkingSteps([...currentSteps]);
             } else if (data.type === 'step') {
               // 步骤更新
               currentSteps.push({
@@ -127,26 +126,41 @@ function App() {
                 action: data.action,
                 observation: data.observation
               });
-              setThinkingSteps([...currentSteps]);
+              setCurrentThinkingSteps([...currentSteps]);
             } else if (data.type === 'final_answer') {
               // 最终答案
               assistantMessage.content = data.content;
               hasFinalAnswer = true;
               
-              // 添加最终答案到思考步骤
-              currentSteps.push({
-                step: currentSteps.length,
-                type: 'final_answer',
-                content: data.content
-              });
-              setThinkingSteps([...currentSteps]);
+              // 将当前对话轮次添加到会话列表中
+              setConversations(prev => [
+                ...prev,
+                {
+                  userMessage,
+                  thinkingSteps: [...currentSteps],
+                  assistantMessage,
+                  showThinking: true // 默认显示思考过程
+                }
+              ]);
               
-              // 添加到消息列表
-              setMessages(prev => [...prev, assistantMessage]);
+              // 清空当前思考过程
+              setCurrentThinkingSteps([]);
             } else if (data.type === 'error') {
               // 错误处理
               assistantMessage.content = `错误: ${data.content}`;
-              setMessages(prev => [...prev, assistantMessage]);
+              // 将当前对话轮次添加到会话列表中
+              setConversations(prev => [
+                ...prev,
+                {
+                  userMessage,
+                  thinkingSteps: [...currentSteps],
+                  assistantMessage,
+                  showThinking: true // 默认显示思考过程
+                }
+              ]);
+              
+              // 清空当前思考过程
+              setCurrentThinkingSteps([]);
             }
           } catch (e) {
             console.error('解析步骤数据失败:', e, '原始数据:', line);
@@ -181,8 +195,13 @@ function App() {
     }
   };
 
-  const toggleThinking = () => {
-    setShowThinking(!showThinking);
+  // 切换特定对话轮次的思考过程显示
+  const toggleThinking = (index) => {
+    setConversations(prev => {
+      const newConversations = [...prev];
+      newConversations[index].showThinking = !newConversations[index].showThinking;
+      return newConversations;
+    });
   };
 
   const handleKeyPress = (e) => {
@@ -196,61 +215,106 @@ function App() {
     <div className="app">
       <div className="chat-container">
         <div className="messages">
-          {messages.map((msg, index) => {
-            const isLastUserMsg = index === messages.length - 1 && msg.role === 'user';
-            
-            return (
-              <React.Fragment key={index}>
-                <div className={`message ${msg.role}`}>
-                  <div className="message-content">
-                    <MarkdownContent content={msg.content} />
-                  </div>
+          {/* 显示所有对话轮次 */}
+          {conversations.map((conversation, convIndex) => (
+            <React.Fragment key={convIndex}>
+              {/* 显示用户的问题 */}
+              <div className={`message ${conversation.userMessage.role}`}>
+                <div className="message-content">
+                  <MarkdownContent content={conversation.userMessage.content} />
                 </div>
-                
-                {/* 只在最后一条用户消息之后显示思考过程 */}
-                {isLastUserMsg && thinkingSteps.length > 0 && (
-                  <div className={`message assistant thinking ${showThinking ? '' : 'collapsed'}`}>
-                    <div className="message-content">
-                      <div className="thinking-header" onClick={toggleThinking}>
-                        🤔 思考过程
-                        <span className="toggle-icon">{showThinking ? '▼' : '▶'}</span>
-                      </div>
-                      {showThinking && (
-                        <>
-                          {thinkingSteps.map((step, stepIndex) => (
-                            <div key={stepIndex} className="thinking-step">
-                              {step.type === 'thought' && (
-                                <div className="thought">
-                                  <strong>初始思考:</strong>
-                                  <div className="thought-content">{step.content}</div>
-                                </div>
-                              )}
-                              {step.type === 'action' && (
-                                <div className="action">
-                                  <strong>步骤 {step.step}:</strong>
-                                  <div className="action-content">
-                                    <div className="sub-thought">
-                                      <strong>💭 思考:</strong> {step.thought}
-                                    </div>
-                                    <div className="action-detail">
-                                      <strong>🎯 行动:</strong> <code>{step.action}</code>
-                                    </div>
-                                    <div className="observation">
-                                      <strong>👁️ 观察:</strong> {step.observation}
-                                    </div>
+              </div>
+              
+              {/* 显示思考过程 */}
+              {conversation.thinkingSteps.length > 0 && (
+                <div className={`message assistant thinking ${conversation.showThinking ? '' : 'collapsed'}`}>
+                  <div className="message-content">
+                    <div className="thinking-header" onClick={() => toggleThinking(convIndex)}>
+                      🤔 思考过程
+                      <span className="toggle-icon">{conversation.showThinking ? '▼' : '▶'}</span>
+                    </div>
+                    {conversation.showThinking && (
+                      <>
+                        {conversation.thinkingSteps.map((step, stepIndex) => (
+                          <div key={stepIndex} className="thinking-step">
+                            {step.type === 'thought' && (
+                              <div className="thought">
+                                <strong>初始思考:</strong>
+                                <div className="thought-content">{step.content}</div>
+                              </div>
+                            )}
+                            {step.type === 'action' && (
+                              <div className="action">
+                                <strong>步骤 {step.step}:</strong>
+                                <div className="action-content">
+                                  <div className="sub-thought">
+                                    <strong>💭 思考:</strong> {step.thought}
+                                  </div>
+                                  <div className="action-detail">
+                                    <strong>🎯 行动:</strong> <code>{step.action}</code>
+                                  </div>
+                                  <div className="observation">
+                                    <strong>👁️ 观察:</strong> {step.observation}
                                   </div>
                                 </div>
-                              )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* 显示助手的答案 */}
+              <div className={`message ${conversation.assistantMessage.role}`}>
+                <div className="message-content">
+                  <MarkdownContent content={conversation.assistantMessage.content} />
+                </div>
+              </div>
+            </React.Fragment>
+          ))}
+          
+          {/* 显示当前正在进行的对话的思考过程 */}
+          {isLoading && currentThinkingSteps.length > 0 && (
+            <div className={`message assistant thinking ${true ? '' : 'collapsed'}`}>
+              <div className="message-content">
+                <div className="thinking-header">
+                  🤔 思考过程
+                  <span className="toggle-icon">▼</span>
+                </div>
+                <>
+                  {currentThinkingSteps.map((step, stepIndex) => (
+                    <div key={stepIndex} className="thinking-step">
+                      {step.type === 'thought' && (
+                        <div className="thought">
+                          <strong>初始思考:</strong>
+                          <div className="thought-content">{step.content}</div>
+                        </div>
+                      )}
+                      {step.type === 'action' && (
+                        <div className="action">
+                          <strong>步骤 {step.step}:</strong>
+                          <div className="action-content">
+                            <div className="sub-thought">
+                              <strong>💭 思考:</strong> {step.thought}
                             </div>
-                          ))}
-                        </>
+                            <div className="action-detail">
+                              <strong>🎯 行动:</strong> <code>{step.action}</code>
+                            </div>
+                            <div className="observation">
+                              <strong>👁️ 观察:</strong> {step.observation}
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
-              </React.Fragment>
-            );
-          })}
+                  ))}
+                </>
+              </div>
+            </div>
+          )}
           
           {isLoading && (
             <div className="message assistant">
