@@ -1,5 +1,7 @@
 import logging
 import re
+import json
+from typing import Iterator, Dict, Any
 from chotbot.core.llm_client import LLMClient
 from chotbot.mcp.tools.tool_manager import ToolManager
 
@@ -97,6 +99,91 @@ History:
         })
         
         return error_message, thinking_steps
+
+    def run_stream(self, user_input: str, max_steps: int = 100) -> Iterator[Dict[str, Any]]:
+        """
+        Stream the ReAct agent's thinking process.
+        
+        Yields:
+            Dict[str, Any]: Each step of the thinking process
+        """
+        # 1. 初始化思考过程和历史记录
+        thought = (
+            f"I need to answer the following question: {user_input}. "
+            f"I should use the tools available to find the answer. "
+            f"The available tools are: {self.tool_manager.get_tool_list()}. "
+            f"I will start by thinking about which tool to use."
+        )
+        history = []
+        logger.info(f"Initial thought: {thought}")
+
+        # 发送初始思考
+        yield {
+            "type": "thought",
+            "step": 0,
+            "content": thought
+        }
+
+        # 2. ReAct 循环
+        for i in range(max_steps):
+            logger.info(f"--- Step {i+1} ---")
+
+            # 3. 生成行动（Action）
+            prompt = f"""Thought: {thought}
+
+Action: [Your action here, e.g., search[query]]"""
+            action = self.llm_client.generate([{"role": "user", "content": prompt}])
+            logger.info(f"Action: {action}")
+
+            # 4. 检查是否得出最终答案
+            if "Final Answer:" in action:
+                final_answer = action.split("Final Answer:")[-1].strip()
+                logger.info(f"Final Answer: {final_answer}")
+                
+                # 发送最终答案
+                yield {
+                    "type": "final_answer",
+                    "step": i + 1,
+                    "content": final_answer
+                }
+                
+                return
+
+            # 5. 执行行动并获取观察结果
+            observation = self._execute_action(action)
+            logger.info(f"Observation: {observation}")
+
+            # 6. 发送当前步骤的思考过程
+            yield {
+                "type": "step",
+                "step": i + 1,
+                "thought": thought,
+                "action": action,
+                "observation": observation
+            }
+
+            # 7. 更新历史和思考过程
+            history.append(f"Thought: {thought}")
+            history.append(f"Action: {action}")
+            history.append(f"Observation: {observation}")
+
+            history_str = "\n".join(history)
+            thought = (
+                f"""Based on the history, I need to decide the next step. 
+If I have the answer, I will output 'Final Answer:'. 
+Otherwise, I will choose another action.
+
+History:
+{history_str}"""
+            )
+
+        # 8. 超出最大步数，发送错误信息
+        logger.warning("Max steps reached, unable to find an answer.")
+        yield {
+            "type": "error",
+            "step": max_steps,
+            "content": "Sorry, I couldn't find an answer after several steps."
+        }
 
     def _execute_action(self, action: str) -> str:
         tool_name, tool_input = self._parse_action(action)
