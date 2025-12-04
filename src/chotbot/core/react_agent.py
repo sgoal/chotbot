@@ -41,7 +41,12 @@ class ReActAgent:
             # 3. 生成行动（Action）
             prompt = f"""Thought: {thought}
 
-Action: [Your action here, e.g., search[query]]"""
+请按照以下要求执行：
+1. 尽可能使用提供的工具获取信息来回答问题
+2. 最终答案中必须包含使用工具获取的引用来源
+3. 工具使用格式：[工具名[参数]]，例如 search[北京天气]
+
+Action: """
             action = self.llm_client.generate([{"role": "user", "content": prompt}])
             logger.info(f"Action: {action}")
 
@@ -154,7 +159,12 @@ History:
             # 3. 生成行动（Action）
             prompt = f"""Thought: {thought}
 
-Action: [Your action here, e.g., search[query]]"""
+请按照以下要求执行：
+1. 尽可能使用提供的工具获取信息来回答问题
+2. 最终答案中必须包含使用工具获取的引用来源
+3. 工具使用格式：[工具名[参数]]，例如 search[北京天气]
+
+Action: """
             action = self.llm_client.generate([{"role": "user", "content": prompt}])
             logger.info(f"Action: {action}")
 
