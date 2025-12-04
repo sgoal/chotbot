@@ -31,6 +31,7 @@ class ReActAgent:
         )
         history = []
         thinking_steps = []
+        all_citations = []  # 存储所有引用信息
         logger.info(f"Initial thought: {thought}")
 
         # 2. ReAct 循环
@@ -47,6 +48,13 @@ Action: [Your action here, e.g., search[query]]"""
             # 4. 检查是否得出最终答案
             if "Final Answer:" in action:
                 final_answer = action.split("Final Answer:")[-1].strip()
+                
+                # 如果有引用信息，将其添加到最终答案中
+                if all_citations:
+                    final_answer += "\n\n### 引用来源：\n"
+                    for i, citation in enumerate(all_citations, 1):
+                        final_answer += f"{i}. [{citation['title']}]({citation['href']})\n"
+                
                 logger.info(f"Final Answer: {final_answer}")
                 
                 # 添加最终答案到思考步骤
@@ -62,6 +70,20 @@ Action: [Your action here, e.g., search[query]]"""
             # 5. 执行行动并获取观察结果
             observation = self._execute_action(action)
             logger.info(f"Observation: {observation}")
+
+            # 提取引用信息（如果有）
+            step_citations = []
+            try:
+                import json
+                # 尝试解析observation为JSON对象
+                if isinstance(observation, str) and (observation.startswith('{') or observation.startswith('[')):
+                    obs_data = json.loads(observation)
+                    if isinstance(obs_data, dict) and 'citations' in obs_data:
+                        step_citations = obs_data['citations']
+                        all_citations.extend(step_citations)
+            except:
+                # 如果解析失败，忽略
+                pass
 
             # 6. 更新历史和思考过程
             history.append(f"Thought: {thought}")
@@ -115,6 +137,7 @@ History:
             f"I will start by thinking about which tool to use."
         )
         history = []
+        all_citations = []  # 存储所有引用信息
         logger.info(f"Initial thought: {thought}")
 
         # 发送初始思考
@@ -138,6 +161,13 @@ Action: [Your action here, e.g., search[query]]"""
             # 4. 检查是否得出最终答案
             if "Final Answer:" in action:
                 final_answer = action.split("Final Answer:")[-1].strip()
+                
+                # 如果有引用信息，将其添加到最终答案中
+                if all_citations:
+                    final_answer += "\n\n### 引用来源：\n"
+                    for i, citation in enumerate(all_citations, 1):
+                        final_answer += f"{i}. [{citation['title']}]({citation['href']})\n"
+                
                 logger.info(f"Final Answer: {final_answer}")
                 
                 # 发送最终答案
@@ -152,6 +182,20 @@ Action: [Your action here, e.g., search[query]]"""
             # 5. 执行行动并获取观察结果
             observation = self._execute_action(action)
             logger.info(f"Observation: {observation}")
+
+            # 提取引用信息（如果有）
+            step_citations = []
+            try:
+                import json
+                # 尝试解析observation为JSON对象
+                if isinstance(observation, str) and (observation.startswith('{') or observation.startswith('[')):
+                    obs_data = json.loads(observation)
+                    if isinstance(obs_data, dict) and 'citations' in obs_data:
+                        step_citations = obs_data['citations']
+                        all_citations.extend(step_citations)
+            except:
+                # 如果解析失败，忽略
+                pass
 
             # 6. 发送当前步骤的思考过程
             yield {

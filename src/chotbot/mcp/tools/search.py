@@ -27,7 +27,22 @@ class SearchTool:
                     max_results=max_results
                 ))
             logger.info(f"Found {len(results)} results.")
-            return {"result": results}
+            
+            # 格式化结果，添加引用信息
+            formatted_results = []
+            for idx, result in enumerate(results, 1):
+                formatted_results.append({
+                    "id": idx,
+                    "title": result.get("title", ""),
+                    "body": result.get("body", ""),
+                    "href": result.get("href", ""),
+                    "source": "DuckDuckGo Search"
+                })
+            
+            return {
+                "result": formatted_results,
+                "citations": formatted_results  # 添加引用信息
+            }
         except Exception as e:
             logger.error(f"Search failed for query '{query}': {e}", exc_info=True)
             return {"error": "Search failed", "message": str(e)}
